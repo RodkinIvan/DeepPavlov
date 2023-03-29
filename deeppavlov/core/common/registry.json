@@ -109,5 +109,6 @@
   "ubuntu_v2_reader": "deeppavlov.dataset_readers.ubuntu_v2_reader:UbuntuV2Reader",
   "wiki_parser": "deeppavlov.models.kbqa.wiki_parser:WikiParser",
   "wiki_sqlite_vocab": "deeppavlov.vocabs.wiki_sqlite:WikiSQLiteVocab",
-  "wikitionary_100K_vocab": "deeppavlov.vocabs.typos:Wiki100KDictionary"
+  "wikitionary_100K_vocab": "deeppavlov.vocabs.typos:Wiki100KDictionary",
+  "biembedder": "deeppavlov.models.embedders.binary_embedder:PretrainedBiEncoder"
 }

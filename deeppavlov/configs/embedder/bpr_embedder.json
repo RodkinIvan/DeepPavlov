@@ -1,0 +1,24 @@
+{
+    "chainer": {
+      "in": ["passages", "is_query"],
+      "pipe": [
+        {
+            "class_name": "biembedder",
+            "pretrained_bpr_path": "/home/ivan/bpr_finetuned_nq_adv.ckpt",
+            "device": "cuda",
+            "in": ["passages", "is_query"],
+            "out": ["binary_embeddings"]
+        }
+      ],
+      "out": ["binary_embeddings"]
+    },
+    "metadata": {
+      "variables": {
+        "ROOT_PATH": "~/.deeppavlov",
+        "DOWNLOADS_PATH": "{ROOT_PATH}/downloads",
+        "MODELS_PATH": "{ROOT_PATH}/models",
+        "MODEL_PATH": "{MODELS_PATH}/bienc",
+        "CONFIGS_PATH": "{DEEPPAVLOV_PATH}/configs"
+      }
+    }
+}
