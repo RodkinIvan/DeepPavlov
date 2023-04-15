@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from torch import nn
 from torch.nn import CrossEntropyLoss
 import numpy as np
-
+import warnings
 
 class FiDT5(transformers.T5ForConditionalGeneration):
     def __init__(self, config):
@@ -351,3 +351,150 @@ class Retriever(transformers.PreTrainedModel):
         gold_score = torch.softmax(gold_score, dim=-1)
         score = torch.nn.functional.log_softmax(score, dim=-1)
         return self.loss_fct(score, gold_score)
+
+
+
+class CropedEncoderWrapper(torch.nn.Module):
+    """
+    Encoder Wrapper for T5 Wrapper to obtain a Fusion-in-Decoder model.
+    """
+    def __init__(self, encoder, use_checkpoint=False, crop_len=64):
+        super().__init__()
+        self.crop_len = crop_len
+        self.encoder = encoder
+        apply_checkpoint_wrapper(self.encoder, use_checkpoint)
+
+    def forward(self, input_ids=None, attention_mask=None, **kwargs,):
+        # total_length = n_passages * passage_length
+        bsz, total_length = input_ids.shape
+        
+        passage_length = total_length // self.n_passages
+        input_ids = input_ids.view(bsz*self.n_passages, passage_length)
+        attention_mask = attention_mask.view(bsz*self.n_passages, passage_length)
+        outputs = self.encoder(input_ids, attention_mask, **kwargs)
+        outputs = (outputs[0][:, :self.crop_len].reshape(bsz, self.n_passages*min(self.crop_len, passage_length), -1), ) + outputs[1:]
+        return outputs
+
+
+class CropedFiDT5(FiDT5):
+    
+    def __init__(self, config, crop_len):
+        super(FiDT5, self).__init__(config)
+        self.wrap_encoder(crop_len=crop_len)
+
+    def wrap_encoder(self, use_checkpoint=False, crop_len=32):
+        """
+        Wrap T5 encoder to obtain a Fusion-in-Decoder model.
+        """
+        self.encoder = CropedEncoderWrapper(self.encoder, use_checkpoint=use_checkpoint, crop_len=crop_len)
+
+    def forward(
+        self,
+        input_ids=None,
+        attention_mask=None,
+        encoder_outputs=None,
+        decoder_input_ids=None,
+        decoder_attention_mask=None,
+        decoder_past_key_value_states=None,
+        use_cache=None,
+        labels=None,
+        inputs_embeds=None,
+        decoder_inputs_embeds=None,
+        head_mask=None,
+        output_attentions=None,
+        output_hidden_states=None,
+        **kwargs
+    ):
+        if input_ids is not None:
+            input_ids = input_ids.view(input_ids.size(0), -1)
+        if attention_mask is not None:
+            attention_mask = attention_mask.view(attention_mask.size(0), -1)
+
+        if "lm_labels" in kwargs:
+            warnings.warn(
+                "The `lm_labels` argument is deprecated and will be removed in a future version, use `labels` instead.",
+                DeprecationWarning,
+            )
+            labels = kwargs.pop("lm_labels")
+        assert kwargs == {}, f"Unexpected keyword arguments: {list(kwargs.keys())}."
+
+        use_cache = use_cache if use_cache is not None else self.config.use_cache
+
+        # Encode if needed (training, first prediction pass)
+        if encoder_outputs is None:
+            # Convert encoder inputs in embeddings if needed
+            encoder_outputs = self.encoder(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                inputs_embeds=inputs_embeds,
+                head_mask=head_mask,
+                output_attentions=output_attentions,
+                output_hidden_states=output_hidden_states,
+            )
+
+        hidden_states = encoder_outputs[0]
+
+        if labels is not None and decoder_input_ids is None and decoder_inputs_embeds is None:
+            # get decoder inputs from shifting lm labels to the right
+            decoder_input_ids = self._shift_right(labels)
+
+        # If decoding with past key value states, only the last tokens
+        # should be given as an input
+        if decoder_past_key_value_states is not None:
+            assert labels is None, "Decoder should not use cached key value states when training."
+            if decoder_input_ids is not None:
+                decoder_input_ids = decoder_input_ids[:, -1:]
+            if decoder_inputs_embeds is not None:
+                decoder_inputs_embeds = decoder_inputs_embeds[:, -1:]
+
+        crop_len = hidden_states.shape[1] // self.encoder.n_passages
+        bsz, total_len = attention_mask.shape
+
+        # Decode
+        decoder_outputs = self.decoder(
+            input_ids=decoder_input_ids,
+            attention_mask=decoder_attention_mask,
+            inputs_embeds=decoder_inputs_embeds,
+            past_key_value_states=decoder_past_key_value_states,
+            encoder_hidden_states=hidden_states,
+            encoder_attention_mask=attention_mask.reshape(bsz, self.encoder.n_passages, -1)[:, :, :crop_len].reshape(bsz, -1),
+            head_mask=head_mask,
+            use_cache=use_cache,
+            output_attentions=output_attentions,
+            output_hidden_states=output_hidden_states,
+        )
+
+        # insert decoder past at right place
+        # to speed up decoding
+        if use_cache is True:
+            past = ((encoder_outputs, decoder_outputs[1]),)
+            decoder_outputs = decoder_outputs[:1] + past + decoder_outputs[2:]
+
+        sequence_output = decoder_outputs[0]
+        # Rescale output before projecting on vocab
+        # See https://github.com/tensorflow/mesh/blob/fa19d69eafc9a482aff0b59ddd96b025c0cb207d/mesh_tensorflow/transformer/transformer.py#L586
+        sequence_output = sequence_output * (self.model_dim ** -0.5)
+        lm_logits = self.lm_head(sequence_output)
+
+        decoder_outputs = (lm_logits,) + decoder_outputs[1:]  # Add hidden states and attention if they are here
+        if labels is not None:
+            loss_fct = CrossEntropyLoss(ignore_index=-100)
+            loss = loss_fct(lm_logits.view(-1, lm_logits.size(-1)), labels.view(-1))
+            # TODO(thom): Add z_loss https://github.com/tensorflow/mesh/blob/fa19d69eafc9a482aff0b59ddd96b025c0cb207d/mesh_tensorflow/layers.py#L666
+            decoder_outputs = (loss,) + decoder_outputs
+
+        return decoder_outputs + encoder_outputs
+
+    def prepare_inputs_for_generation(self, input_ids, past, attention_mask, use_cache, **kwargs):
+        assert past is not None, "past has to be defined for encoder_outputs"
+
+        encoder_outputs, decoder_past_key_value_states = past
+        n_passages = self.encoder.n_passages
+        bsz, _ = attention_mask.shape
+        return {
+            "decoder_input_ids": input_ids,
+            "decoder_past_key_value_states": decoder_past_key_value_states,
+            "encoder_outputs": encoder_outputs,
+            "attention_mask": attention_mask.reshape(bsz, n_passages, -1)[:, :, :self.encoder.crop_len].reshape(bsz, -1),
+            "use_cache": use_cache,
+        }
