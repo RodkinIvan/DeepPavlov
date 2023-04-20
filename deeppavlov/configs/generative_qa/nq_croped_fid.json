@@ -9,14 +9,9 @@
       "shuffle": true
     },
     "chainer": {
-      "in": ["question"],
+      "in": ["question", "contexts", "titles"],
       "in_y": ["target", "gold_answers"],
       "pipe": [
-        {
-          "config_path": "{CONFIGS_PATH}/doc_retrieval/bpr_en.json",
-          "in": ["question"],
-          "out": ["contexts"]
-        },
         {
           "class_name": "fid_input_preprocessor",
           "vocab_file": "{TRANSFORMER}",
