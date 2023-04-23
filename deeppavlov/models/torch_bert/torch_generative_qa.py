@@ -340,7 +340,7 @@ class TorchCropedFiD(TorchModel):
     def load_model_from_checkpoint(self, model_dir_path: str):
         print('chkpnt')
         logger.info(f"Loading model from {model_dir_path}.")
-        self.model = CropedFiDT5.from_pretrained(model_dir_path)
+        self.model = CropedFiDT5.from_pretrained(model_dir_path, crop_len=self.crop_len)
         # self.model = FiDT5.from_pretrained(model_dir_path)
         self.model = self.model.to(self.device)
 
