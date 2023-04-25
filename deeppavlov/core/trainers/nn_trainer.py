@@ -26,6 +26,8 @@ from deeppavlov.core.data.data_learning_iterator import DataLearningIterator
 from deeppavlov.core.trainers.fit_trainer import FitTrainer
 from deeppavlov.core.trainers.utils import parse_metrics, NumpyArrayEncoder
 from deeppavlov.core.common.log_events import get_tb_writer
+import wandb
+
 log = getLogger(__name__)
 report_log = getLogger('train_report')
 
@@ -216,6 +218,8 @@ class NNTrainer(FitTrainer):
         report_log.info(json.dumps(report, ensure_ascii=False, cls=NumpyArrayEncoder))
         self.validation_number += 1
 
+        wandb.log(report, step=self.train_batches_seen)
+
     def _log(self, iterator: DataLearningIterator,
              tensorboard_tag: Optional[str] = None, tensorboard_index: Optional[int] = None) -> None:
         self._send_event(event_name='before_log')
@@ -252,6 +256,8 @@ class NNTrainer(FitTrainer):
 
         report = {'train': report}
         report_log.info(json.dumps(report, ensure_ascii=False, cls=NumpyArrayEncoder))
+
+        wandb.log(report, step=self.train_batches_seen)
 
     def _send_event(self, event_name: str, data: Optional[dict] = None) -> None:
         report = {
