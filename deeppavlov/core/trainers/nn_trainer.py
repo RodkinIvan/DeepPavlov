@@ -218,7 +218,7 @@ class NNTrainer(FitTrainer):
         report_log.info(json.dumps(report, ensure_ascii=False, cls=NumpyArrayEncoder))
         self.validation_number += 1
 
-        wandb.log(report, step=self.train_batches_seen)
+        wandb.log(report, step=self.examples)
 
     def _log(self, iterator: DataLearningIterator,
              tensorboard_tag: Optional[str] = None, tensorboard_index: Optional[int] = None) -> None:
@@ -257,7 +257,7 @@ class NNTrainer(FitTrainer):
         report = {'train': report}
         report_log.info(json.dumps(report, ensure_ascii=False, cls=NumpyArrayEncoder))
 
-        wandb.log(report, step=self.train_batches_seen)
+        wandb.log(report, step=self.examples)
 
     def _send_event(self, event_name: str, data: Optional[dict] = None) -> None:
         report = {
