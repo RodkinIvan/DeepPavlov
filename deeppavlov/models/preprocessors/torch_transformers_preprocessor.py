@@ -427,9 +427,10 @@ class FiDInputPreprocessor(Component):
                  vocab_file: str,
                  do_lower_case: bool = True,
                  max_seq_length: int = 512,
+                 num_contexts = 25,
                  **kwargs) -> None:
         self.max_seq_length = max_seq_length
-
+        self.num_contexts = num_contexts
         if Path(vocab_file).is_file():
             vocab_file = str(expand_path(vocab_file))
             self.tokenizer = AutoTokenizer(vocab_file=vocab_file, do_lower_case=do_lower_case)
@@ -437,6 +438,11 @@ class FiDInputPreprocessor(Component):
             self.tokenizer = AutoTokenizer.from_pretrained(vocab_file, do_lower_case=do_lower_case)
     
     def __call__(self, questions_batch: List[str], contexts_batch: List[List[str]]):
+        contexts_batch = list(contexts_batch)
+        n_batches = len(contexts_batch)
+        for i in range(n_batches):
+            contexts_batch[i] = contexts_batch[i][:self.num_contexts]
+        
         prepare_data = lambda q, c,: f"question: {q} context: {c}"
         passages_batch = [[prepare_data(question, context) for context in contexts] 
                             for (question, contexts) in zip(questions_batch, contexts_batch)]
