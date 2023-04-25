@@ -405,11 +405,15 @@ class CropedFiDT5(FiDT5):
         output_hidden_states=None,
         **kwargs
     ):
-        if input_ids is not None:
+        
+        if input_ids != None:
+            # inputs might have already be resized in the generate method
+            if input_ids.dim() == 3:
+                self.encoder.n_passages = input_ids.size(1)
             input_ids = input_ids.view(input_ids.size(0), -1)
-        if attention_mask is not None:
+        if attention_mask != None:
             attention_mask = attention_mask.view(attention_mask.size(0), -1)
-
+        
         if "lm_labels" in kwargs:
             warnings.warn(
                 "The `lm_labels` argument is deprecated and will be removed in a future version, use `labels` instead.",
