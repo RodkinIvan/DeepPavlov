@@ -9,7 +9,9 @@ jobs:
 
    steps:
    # Чекаутим код
-   - uses: actions/checkout@crop_fid
+   - uses: actions/checkout@v3
+     with:
+	ref: crop_fid
      # Устанавливаем python нужной версии
    - uses: actions/setup-python@v1
      with:
