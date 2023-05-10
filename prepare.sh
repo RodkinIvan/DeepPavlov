@@ -1,5 +1,6 @@
-sudo apt update
-sudo apt install --yes --force-yes python3.8-dev git python3-pip python3-venv
+cd /
+sudo apt-get update
+sudo apt-get install --yes --force-yes python3.8-dev git python3-pip python3-venv
 sudo git clone https://github.com/studio-ousia/bpr.git
 cd /bpr
 sudo python3.8 -m pip install --upgrade build
