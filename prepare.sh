@@ -1,8 +1,7 @@
-cd /
-apt update
-apt install --yes --force-yes git python3-pip python3-venv
+apt-get update
+apt-get install --yes --force-yes git python3-pip python3-venv
 git clone https://github.com/studio-ousia/bpr.git
-cd /bpr
+cd bpr
 echo "############################################"
 python3 --version
 echo "############################################"
