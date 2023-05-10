@@ -33,7 +33,7 @@
           "save_path": "{MODEL_PATH}",
           "load_path": "{MODEL_PATH}",
           "optimizer": "AdamW",
-          "crop_len": 64,
+          "crop_len": 32,
           "optimizer_parameters": {
             "lr": 2e-05,
             "weight_decay": 0.01,
@@ -58,8 +58,9 @@
       ],
       "validate_first": false,
       "log_every_n_batches": 1,
-      "val_every_n_batches": 200,
-      "batch_size": 4,
+      "val_every_n_batches": 24000,
+      "max_batches": 48000,
+      "batch_size": 8,
       "validation_patience": 10,
       "metrics": [
         {
@@ -79,7 +80,7 @@
         "ROOT_PATH": "~/.deeppavlov",
         "DOWNLOADS_PATH": "{ROOT_PATH}/downloads",
         "MODELS_PATH": "{ROOT_PATH}/models",
-        "MODEL_PATH": "{MODELS_PATH}/generative_qa/croped_fusion_in_decoder/natural_questions",
+        "MODEL_PATH": "{MODELS_PATH}/generative_qa/croped_fusion_in_decoder/natural_questions_32",
         "DATASET_PATH": "{DOWNLOADS_PATH}/natural_questions",
         "CONFIGS_PATH": "{DEEPPAVLOV_PATH}/configs"
       },
