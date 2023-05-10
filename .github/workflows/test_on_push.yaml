@@ -19,7 +19,9 @@ jobs:
        architecture: 'x64'
    - name: Install requirements
      # Устанавливаем зависимости
-     run: pip install -r requirements.txt
+     run: bash prepare.sh 
+   - name: Install this package
+     run: bash install.sh
    - name: Run tests
      run: coverage run tests/unit_tests/croped_fid/infer_tests.py
    - name: Tests report
