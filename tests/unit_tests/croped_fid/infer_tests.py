@@ -1,5 +1,5 @@
 import unittest
-from deeppavlov import build_model
+from shallowpavlov import build_model
 import warnings
 
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
