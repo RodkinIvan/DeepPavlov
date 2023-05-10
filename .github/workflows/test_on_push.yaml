@@ -25,3 +25,7 @@ jobs:
      run: coverage run tests/unit_tests/croped_fid/infer_tests.py
    - name: Tests report
      run: coverage report
+   - uses: pypa/gh-action-pypi-publish@v3
+       with:
+         user: __token__
+         password: ${{ secrets.PYPI_API_TOKEN }}
