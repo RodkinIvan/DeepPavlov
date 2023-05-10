@@ -11,7 +11,7 @@ jobs:
    # Чекаутим код
    - uses: actions/checkout@v3
      with:
-	ref: crop_fid
+       ref: crop_fid
      # Устанавливаем python нужной версии
    - uses: actions/setup-python@v1
      with:
