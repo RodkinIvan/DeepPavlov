@@ -47,7 +47,7 @@ def readme():
 
 if __name__ == '__main__':
     setup(
-        name='shallowpavlov',
+        name='deeppavlov',
         packages=find_packages(exclude=('tests', 'docs', 'utils')),
         version=__version__,
         description=__description__,
