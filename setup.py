@@ -16,7 +16,7 @@ from setuptools import setup, find_packages
 
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
-meta_path = os.path.join(__location__, 'deeppavlov', '_meta.py')
+meta_path = os.path.join(__location__, 'shallowpavlov', '_meta.py')
 with open(meta_path) as meta:
     exec(meta.read())
 
@@ -47,7 +47,7 @@ def readme():
 
 if __name__ == '__main__':
     setup(
-        name='deeppavlov',
+        name='shallowpavlov',
         packages=find_packages(exclude=('tests', 'docs', 'utils')),
         version=__version__,
         description=__description__,
