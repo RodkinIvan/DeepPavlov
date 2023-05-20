@@ -49,7 +49,7 @@ if __name__ == '__main__':
     setup(
         name='shallowpavlov',
         packages=find_packages(exclude=('tests', 'docs', 'utils')),
-        version='0.0.1',
+        version='0.0.2',
         description=__description__,
         long_description=readme(),
         long_description_content_type='text/markdown',
