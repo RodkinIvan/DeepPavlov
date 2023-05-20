@@ -21,6 +21,7 @@
           "class_name": "fid_input_preprocessor",
           "vocab_file": "{TRANSFORMER}",
           "max_seq_length": 200,
+          "num_contexts": 25,
           "in": ["question", "contexts"],
           "out": ["input_ids", "attention_mask"]
         },
@@ -53,7 +54,7 @@
           "out": ["model_answer"]
         }
       ],
-      "out": ["model_answer"]
+      "out": ["model_answer", "contexts"]
     },
     "train": {
       "show_examples": false,
